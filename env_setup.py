@@ -22,10 +22,10 @@ B_tensor = torch.from_numpy(B).to(device).double()
 nU       = B.shape[1]
 
 # Optimal LQR cost function (Q and R)
-Q        = [[1.0, 0.], [0., 1.]]
+Q        = [[2.0, 0.], [0., 1.]]
 Q        = np.array(Q)
 Q_tensor = torch.from_numpy(Q).to(device).double()
-R        = 5 * np.eye(1)
+R        = 20 * np.eye(1)
 R_tensor = torch.from_numpy(R).to(device).double()
 R_inv    = np.linalg.inv(R)
 
@@ -42,7 +42,7 @@ P_int = get_P(A_int, B_int, Q, R)
 # print("Human internal control matrix:", P_int)
 # print()
 # Compute robot's LQR DARE solution (i.e., the optimal solution matrix)
-# P_true = get_P(A, B, Q, R)
+P_true = get_P(A, B, Q, R)
 # print("Optimal control matrix:", P_true)
 
 # Mask for the dynamics gradient update

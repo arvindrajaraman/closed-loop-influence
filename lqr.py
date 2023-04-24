@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.random import choice
+import ipdb
 
 from dare import get_P
 
@@ -8,11 +9,24 @@ def get_LQR_control(x_t0_np, A_np, B_np, Q_np, R_np, x_g_np):
     """ Compute the optimal LQR control"""
     P_np = get_P(A_np, B_np, Q_np, R_np).numpy()
 
-    temp = R_np + np.matmul(np.matmul(B_np.transpose(), P_np), B_np)
+    temp = R_np + np.matmul(np.matmul(B_np.T, P_np), B_np)
 
-    K = np.matmul(np.matmul(np.linalg.inv(temp), B_np.transpose()), P_np)
+    # K = np.matmul(np.matmul(np.linalg.inv(temp), B_np.transpose()), P_np)
+    K = np.linalg.multi_dot((
+        np.linalg.pinv(np.add(
+            R_np,
+            np.linalg.multi_dot((B_np.T, P_np, B_np))
+        )),
+        B_np.T,
+        P_np,
+        A_np
+    ))
+    u_star = np.matmul(-K, x_t0_np -x_g_np)
+    # if abs(u_star) >= 2000.0:
+    #     ipdb.set_trace()
     #print(K)
-    return np.matmul(-K, x_t0_np -x_g_np)
+    # ipdb.set_trace()
+    return u_star
 
 def get_LQR_cost(x_t0_np, A_np, B_np, Q_np, R_np, x_g_np, u_t0_np):
   """ Compute the LQR cost for the input state and action, i.e., Q(s,a)"""

@@ -7,7 +7,8 @@ from human import HumanRobotEnv
 
 def gen_physical_state(sim_policy: dict, x1_lo: float, x2_lo: float, x1_hi: float, x2_hi: float):
     if sim_policy['human_state'] == 'fixed':
-        return np.array([[5.0], [2.0]])
+        assert 'human_state_init' in sim_policy
+        return np.array(sim_policy['human_state_init'])
     elif sim_policy['human_state'] == 'varying':
         x1 = random.uniform(x1_lo, x1_hi)
         x2 = random.uniform(x2_lo, x2_hi)
@@ -17,14 +18,17 @@ def gen_physical_state(sim_policy: dict, x1_lo: float, x2_lo: float, x1_hi: floa
         
 def gen_mental_state(sim_policy: dict):
     if sim_policy['mental_state'] == 'fixed':
-        return np.array([[1.0]])
+        assert 'mental_state_init' in sim_policy
+        return np.array(sim_policy['mental_state_init'])
     elif sim_policy['mental_state'] == 'varying':
         x = random.uniform(0.0, 1.0)
         return np.array([[x]])
     else:
         raise ValueError("unknown sim_policy['mental_state']")
 
-def generate_simulated_data(sim_policy: dict, sim_time: int, n_demo: int, human_mode: str):
+def generate_simulated_data(sim_policy: dict, sim_time: int, n_demo: int,
+                            is_updating_internal_model: bool, stochastic_human: bool,
+                            human_lr: float):
     # Simulate how human updates the internal model
 
     robot_states = []
@@ -33,7 +37,7 @@ def generate_simulated_data(sim_policy: dict, sim_time: int, n_demo: int, human_
     human_mental_states = []
 
     for i in tqdm(range(n_demo)):
-        human_env = HumanRobotEnv('passive_teaching', 1.0, 'use_model_human', True)
+        human_env = HumanRobotEnv('passive_teaching', 1.0, 'use_model_human', is_updating_internal_model, human_lr)
         human_env.set_environment(A, B, Q, R, None, None, sim_time)
         human_env.set_action_set(None, u_t0_R_aug_set)
         human_env.set_human_internal_model(None)
@@ -48,6 +52,7 @@ def generate_simulated_data(sim_policy: dict, sim_time: int, n_demo: int, human_
                                 gen_mental_state(sim_policy))
         
         human_env.noisy_human = False
+        human_env.stochastic_human = stochastic_human
         for i in range(sim_time):
             human_env.step(None)
         

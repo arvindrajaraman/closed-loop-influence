@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from device import device
+from env_setup import *
 
 class ThetaEstimatorMLP(nn.Module):
     def __init__(self):
@@ -37,25 +38,25 @@ class ThetaEstimatorLargeResidualMLP(nn.Module):
 class ThetaEstimatorTransformer(nn.Module):
     def __init__(self):
         super().__init__()
-        d_model = 3
-        self.transformer_encoder = nn.TransformerEncoderLayer(d_model=d_model, nhead=3, batch_first=True)
+        d_model = nX + nX + nU
+        self.transformer_encoder = nn.TransformerEncoderLayer(d_model=d_model, nhead=5, dropout=0.2, batch_first=True)
         self.fc_layers = nn.Sequential(
-            nn.Linear(d_model, 3),
+            nn.Linear(d_model, 12),
             nn.ReLU(),
-            nn.Linear(3, 3),
+            nn.Linear(12, 8),
             nn.ReLU(),
-            nn.Linear(3, 1),
+            nn.Linear(8, 1),
             nn.Sigmoid()
         )
     
     def forward(self, x):
         _, layers, _ = x.size()
-        mask = torch.zeros(layers, layers, dtype=torch.bool)
+        mask = torch.zeros(layers, layers)
         for i in range(layers):
             for j in range(i+1, layers):
-                mask[i, j] = True
-        mask = mask.to(device)
+                mask[i, j] = float('-inf')
+        mask = mask.to(device).double()
 
         y = self.transformer_encoder(x, src_mask=mask)
-        y = self.fc_layers(y) + 0.001
+        y = self.fc_layers(y)
         return y
