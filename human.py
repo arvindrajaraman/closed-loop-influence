@@ -199,7 +199,7 @@ class HumanRobotEnv(Env):
         u_t0_H = get_LQR_control(self.physical_state, self.A_t, B_hat,\
                                 self.Q_t, self.R_t,x_g)
         if self.stochastic_human:
-            stdev = 0.001 # prev=0.00000001
+            stdev = 0.01 # prev=0.00000001
             u_t0_H = u_t0_H + \
             np.random.multivariate_normal(np.array([0]), stdev * np.array([[1]])).reshape(1,1)
         # make the human stochastic by sampling actions
@@ -259,6 +259,7 @@ class HumanRobotEnv(Env):
                 current_demo_human_action_traj_copy = copy.deepcopy(self.current_demo_human_action_traj)
                 current_demo_human_obs_traj_copy = copy.deepcopy(self.current_demo_human_obs_traj)
                 #print(current_demo_state_traj_copy)
+                # TODO change internalmodelpred
                 f_hat_batch_pred = InternalModelPred(self.human_internal_model, 
                                                     current_demo_state_traj_copy,
                                                     current_demo_human_action_traj_copy,

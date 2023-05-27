@@ -1,6 +1,5 @@
 import numpy as np
 from numpy.random import choice
-import ipdb
 
 from dare import get_P
 
