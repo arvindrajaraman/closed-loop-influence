@@ -19,7 +19,7 @@ writer = SummaryWriter()
 
 # Generate trajectories to train estimator
 sim_policy = dict()
-sim_policy['human_state'] = 'varying'  # can be 'fixed' or 'varying'
+sim_policy['human_state'] = 'fixed'  # can be 'fixed' or 'varying'
 sim_policy['mental_state'] = 'fixed'  # can be 'fixed' or 'varying'
 
 sim_policy['human_state_init'] = [[0.4], [0.0]] # only needed when human_state = 'fixed'
@@ -47,40 +47,40 @@ human_obs_train, human_obs_test = human_obs[:train_size], human_obs[train_size:]
 human_mental_states_train, human_mental_states_test = human_mental_states[:train_size], human_mental_states[train_size:]
 
 """DATA VISUALIZATION"""
-def physical_states_grid():
-    n = 2 if (n_demo < 9) else 3
-    fig, axs = plt.subplots(n, n)
-    for i in range(n):
-        for j in range(n):
-            ax = axs[i][j]
-            idx = (i*n) + j
-            human_traj = np.array(robot_states_train[idx]).squeeze()
-            ax.plot(human_traj[:,0],human_traj[:,1],'bo', markersize=3)
-            ax.axis(xmin=-1, xmax=1, ymin=-1, ymax=1)
-            ax.axis('equal')
+# def physical_states_grid():
+#     n = 2 if (n_demo < 9) else 3
+#     fig, axs = plt.subplots(n, n)
+#     for i in range(n):
+#         for j in range(n):
+#             ax = axs[i][j]
+#             idx = (i*n) + j
+#             human_traj = np.array(robot_states_train[idx]).squeeze()
+#             ax.plot(human_traj[:,0],human_traj[:,1],'bo', markersize=3)
+#             ax.axis(xmin=-1, xmax=1, ymin=-1, ymax=1)
+#             ax.axis('equal')
 
-    data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    writer.add_image('data/physical_states', data, 0)
+#     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+#     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+#     writer.add_image('data/physical_states', data, 0)
 
-physical_states_grid()
+# physical_states_grid()
 
-def mental_states_grid():
-    n = 2 if (n_demo < 9) else 3
-    fig, axs = plt.subplots(n, n)
-    for i in range(n):
-        for j in range(n):
-            ax = axs[i][j]
-            idx = (i*n) + j
-            print(human_mental_states_train[idx])
-            human_internal_state_traj = np.array(human_mental_states_train[idx]).squeeze()
-            ax.plot(human_internal_state_traj, 'bo', markersize=3)
+# def mental_states_grid():
+#     n = 2 if (n_demo < 9) else 3
+#     fig, axs = plt.subplots(n, n)
+#     for i in range(n):
+#         for j in range(n):
+#             ax = axs[i][j]
+#             idx = (i*n) + j
+#             print(human_mental_states_train[idx])
+#             human_internal_state_traj = np.array(human_mental_states_train[idx]).squeeze()
+#             ax.plot(human_internal_state_traj, 'bo', markersize=3)
     
-    data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-    data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-    writer.add_image('data/mental_states', data, 0)
+#     data = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+#     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+#     writer.add_image('data/mental_states', data, 0)
 
-mental_states_grid()
+# mental_states_grid()
 
 """PREPROCESSING DATA FOR ESTIMATOR"""
 states_train = torch.tensor(robot_states_train, device=device)
