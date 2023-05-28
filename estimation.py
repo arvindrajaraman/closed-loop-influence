@@ -35,7 +35,7 @@ train_split = 0.7
 train_size = int(n_demo * train_split)
 test_size = n_demo - train_size
 
-epochs = 1000
+epochs = 100
 model_lr = 0.01
 
 data = generate_simulated_data(sim_policy, sim_time, n_demo, is_updating_internal_model, stochastic_human, human_lr)
