@@ -1,8 +1,9 @@
 # Closed Loop Influence
-By: Arvind Rajaraman, Ran (Thomas) Tian, Andrea Bacjsy, and Anca Dragan
-Berkeley Artificial Intelligence Research - InterACT Lab
+**By**: **Arvind Rajaraman, Ran (Thomas) Tian, Andrea Bacjsy, and Anca Dragan**
 
-Frameworks Used: PyTorch, NumPy, OpenAI Gym, HuggingFace
+**Berkeley Artificial Intelligence Research** - InterACT Lab
+
+**Frameworks Used**: PyTorch, NumPy, OpenAI Gym, HuggingFace
 
 In a human-robot interaction setting, humans inevitably have flawed or biased understanding of the environment around them. They may not be sure about extrinsic factors of the world (e.g. a robot arm's joint friction), or their own internal goals/preferences (e.g. how the robot's arm should be configured). Humans often have a long learning curve when learning to operate a robotic arm with precision and dexterity. What if we could have the robot influence the human, with the human-in-the-loop, and as a result, speed up this learning process?
 
