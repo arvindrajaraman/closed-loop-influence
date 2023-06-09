@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 from env_setup import *
 from human import HumanRobotEnv
+from models import ThetaEstimatorTransformer
 
 def gen_physical_state(sim_policy: dict, x1_lo: float, x2_lo: float, x1_hi: float, x2_hi: float):
     if sim_policy['human_state'] == 'fixed':

@@ -39,13 +39,13 @@ class ThetaEstimatorTransformer(nn.Module):
     def __init__(self):
         super().__init__()
         d_model = nX + nX + nU
-        self.transformer_encoder = nn.TransformerEncoderLayer(d_model=d_model, nhead=5, dropout=0.2, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoderLayer(d_model=d_model, nhead=5, dropout=0.2, batch_first=True, dtype=torch.double)
         self.fc_layers = nn.Sequential(
-            nn.Linear(d_model, 12),
+            nn.Linear(d_model, 12, dtype=torch.double),
             nn.ReLU(),
-            nn.Linear(12, 8),
+            nn.Linear(12, 8, dtype=torch.double),
             nn.ReLU(),
-            nn.Linear(8, 1),
+            nn.Linear(8, 1, dtype=torch.double),
             nn.Sigmoid()
         )
     

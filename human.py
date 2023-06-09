@@ -71,6 +71,27 @@ def update_human_internal_dynamics_model(traj_snippet,\
 
     return A_int_np_new, B_int_np_new
 
+def internal_model_estimation(model, robot_states, human_actions, human_obs):
+    # Construct input tensor
+    train_size = 1
+
+    robot_states = torch.tensor(robot_states, device=device)
+    robot_states = robot_states.view(-1, nX)
+
+    human_actions = torch.tensor(human_actions, device=device)
+    human_actions = human_actions.view(-1, nU)
+
+    human_obs = torch.tensor(human_obs, device=device)
+    human_obs = human_obs.view(-1, nX)
+
+    inputs = torch.cat((robot_states, human_actions, human_obs), axis=1)
+    inputs = inputs.view(train_size, -1, nX + nU + nX).double()
+
+    # Perform estimation
+    model.eval()
+    theta_H_batch = model(inputs)
+    return theta_H_batch
+
 #@title Human class
 class HumanRobotEnv(Env):
     def __init__(self, robot_mode, alpha, human_type, is_updating_internal_model, human_lr) :
@@ -199,7 +220,7 @@ class HumanRobotEnv(Env):
         u_t0_H = get_LQR_control(self.physical_state, self.A_t, B_hat,\
                                 self.Q_t, self.R_t,x_g)
         if self.stochastic_human:
-            stdev = 0.01 # prev=0.00000001
+            stdev = 0.001 # prev=0.00000001
             u_t0_H = u_t0_H + \
             np.random.multivariate_normal(np.array([0]), stdev * np.array([[1]])).reshape(1,1)
         # make the human stochastic by sampling actions
@@ -255,15 +276,14 @@ class HumanRobotEnv(Env):
 
             # update the mental state
             if self.human_type == 'use_nn_human' and self.is_updating_internal_model: 
-                current_demo_state_traj_copy = copy.deepcopy(self.current_demo_state_traj)
-                current_demo_human_action_traj_copy = copy.deepcopy(self.current_demo_human_action_traj)
-                current_demo_human_obs_traj_copy = copy.deepcopy(self.current_demo_human_obs_traj)
+                current_demo_state_traj_copy = copy.deepcopy(self.current_demo_state_traj)                # robot state
+                current_demo_human_action_traj_copy = copy.deepcopy(self.current_demo_human_action_traj)  # human action
+                current_demo_human_obs_traj_copy = copy.deepcopy(self.current_demo_human_obs_traj)        # human obs
                 #print(current_demo_state_traj_copy)
-                # TODO change internalmodelpred
-                f_hat_batch_pred = InternalModelPred(self.human_internal_model, 
-                                                    current_demo_state_traj_copy,
-                                                    current_demo_human_action_traj_copy,
-                                                    current_demo_human_obs_traj_copy)
+                f_hat_batch_pred = internal_model_estimation(self.human_internal_model, 
+                                                             current_demo_state_traj_copy,
+                                                             current_demo_human_action_traj_copy,
+                                                             current_demo_human_obs_traj_copy)
                 #print(f_hat_batch_pred)
                 self.mental_state[0,0] = f_hat_batch_pred[0,-1,0]
             if self.human_type == 'use_model_human'and self.is_updating_internal_model:
