@@ -1,9 +1,4 @@
 # Closed Loop Influence
-**By**: **Arvind Rajaraman, Ran (Thomas) Tian, Andrea Bacjsy, and Anca Dragan**
-
-**Berkeley Artificial Intelligence Research** - InterACT Lab
-
-**Frameworks Used**: PyTorch, NumPy, OpenAI Gym, HuggingFace
 
 In a human-robot interaction setting, humans inevitably have flawed or biased understanding of the environment around them. They may not be sure about extrinsic factors of the world (e.g. a robot arm's joint friction), or their own internal goals/preferences (e.g. how the robot's arm should be configured). Humans often have a long learning curve when learning to operate a robotic arm with precision and dexterity. What if we could have the robot influence the human, with the human-in-the-loop, and as a result, speed up this learning process?
 
@@ -21,5 +16,3 @@ Here is a high-level overview of what each file does:
 - `models.py` - defines different models that can be used in the estimation process.
 - `train_mlp.ipynb` - interactive environment to train a vanilla neural network-based estimator of the human's internal state.
 - `train_transformer.ipynb` - interactive environment to train a Transformer-based estimator of the human's internal state.
-
-If you have any questions/inquiries, please email arvind.rajaraman@berkeley.edu. Thank you!
