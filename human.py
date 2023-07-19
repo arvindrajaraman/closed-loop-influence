@@ -94,7 +94,7 @@ def internal_model_estimation(model, robot_states, human_actions, human_obs):
 
 #@title Human class
 class HumanRobotEnv(Env):
-    def __init__(self, robot_mode, alpha, human_type, is_updating_internal_model, human_lr) :
+    def __init__(self, robot_mode, alpha, human_type, is_updating_internal_model, human_lr, influence_type='oracle') :
         # the mode of the robot (active or passive)
         self.robot_mode = robot_mode
         # the blending policy of the robot
@@ -104,6 +104,7 @@ class HumanRobotEnv(Env):
         # if human can updates the internal model in modeled human
         self.is_updating_internal_model = is_updating_internal_model
         self.human_lr = human_lr
+        self.influence_type = influence_type
         # ground truth environment dynamics (linear dynamics with LQR control)
         self.A_t = None
         self.B_t = None
@@ -126,6 +127,7 @@ class HumanRobotEnv(Env):
         # Initialize the human state
         self.physical_state = None
         self.mental_state = None
+        self.estimated_mental_state = None
         self.state = None
         
         # If true, the input action to step is the real human action
@@ -141,6 +143,7 @@ class HumanRobotEnv(Env):
         self.current_demo_human_action_traj       = []
         self.current_demo_human_obs_traj          = []
         self.current_demo_robot_action_traj       = []
+        self.current_demo_human_estimated_mental_state_traj = []
         self.current_demo_human_mental_state_traj = []
         self.current_demo_reward_traj             = []
         self.current_demo_task_reward_traj        = []
@@ -184,8 +187,20 @@ class HumanRobotEnv(Env):
         """
         self.physical_state = physical_state
         self.mental_state = mental_state
-        self.state = \
-        np.concatenate((self.physical_state, self.mental_state), 0).reshape(physical_state.shape[0] + mental_state.shape[0])
+        self.estimated_mental_state = np.zeros_like(mental_state)
+        if self.influence_type == 'baseline':
+            self.state = \
+            np.concatenate((self.physical_state, np.zeros_like(self.mental_state)), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        elif self.influence_type == 'oracle':
+            self.state = \
+            np.concatenate((self.physical_state, self.mental_state), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        elif self.influence_type == 'estimated':
+            self.state = \
+            np.concatenate((self.physical_state, self.estimated_mental_state), 0).reshape(self.physical_state.shape[0] + self.estimated_mental_state.shape[0],)
+        else:
+            raise NotImplementedError("infleunce_type is invalid")
+        # self.state = \
+        # np.concatenate((self.physical_state, self.mental_state), 0).reshape(physical_state.shape[0] + mental_state.shape[0])
     
     def update_goal(self):
         """
@@ -266,6 +281,7 @@ class HumanRobotEnv(Env):
         self.current_demo_human_obs_traj.append([x_t1])
         self.current_demo_robot_action_traj.append([u_t0])
         self.current_demo_human_mental_state_traj.append(copy.deepcopy(self.mental_state))
+        self.current_demo_human_estimated_mental_state_traj.append(copy.deepcopy(self.estimated_mental_state))
         self.xg_demo_hist.append(x_g)
         self.current_demo_opt_action_traj.append([u_t0_opt])
        
@@ -274,19 +290,21 @@ class HumanRobotEnv(Env):
         reward = 0
         if not self.real_human_mode:
 
-            # update the mental state
-            if self.human_type == 'use_nn_human' and self.is_updating_internal_model: 
+            # estimate mental state
+            if self.human_internal_model is not None:
                 current_demo_state_traj_copy = copy.deepcopy(self.current_demo_state_traj)                # robot state
                 current_demo_human_action_traj_copy = copy.deepcopy(self.current_demo_human_action_traj)  # human action
                 current_demo_human_obs_traj_copy = copy.deepcopy(self.current_demo_human_obs_traj)        # human obs
-                #print(current_demo_state_traj_copy)
                 f_hat_batch_pred = internal_model_estimation(self.human_internal_model, 
-                                                             current_demo_state_traj_copy,
-                                                             current_demo_human_action_traj_copy,
-                                                             current_demo_human_obs_traj_copy)
-                #print(f_hat_batch_pred)
-                self.mental_state[0,0] = f_hat_batch_pred[0,-1,0]
-            if self.human_type == 'use_model_human'and self.is_updating_internal_model:
+                                                                current_demo_state_traj_copy,
+                                                                current_demo_human_action_traj_copy,
+                                                                current_demo_human_obs_traj_copy)
+                self.estimated_mental_state[0,0] = f_hat_batch_pred[0,-1,0]
+
+            # update the mental state
+            if self.human_type == 'use_nn_human' and self.is_updating_internal_model:
+                raise NotImplementedError("This does not work")
+            if self.human_type == 'use_model_human' and self.is_updating_internal_model:
                 # use the ground truth model to test the RL algorithm
                 A_int_t0, B_int_t0 = update_human_internal_dynamics_model([self.physical_state], \
                                                                 [x_t1], [u_t0_H],\
@@ -331,8 +349,19 @@ class HumanRobotEnv(Env):
         # Return step information
         # update the physical_state
         self.physical_state = x_t1
-        self.state = \
-        np.concatenate((self.physical_state, self.mental_state), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        if self.influence_type == 'baseline':
+            self.state = \
+            np.concatenate((self.physical_state, np.zeros_like(self.mental_state)), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        elif self.influence_type == 'oracle':
+            self.state = \
+            np.concatenate((self.physical_state, self.mental_state), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        elif self.influence_type == 'estimated':
+            self.state = \
+            np.concatenate((self.physical_state, self.estimated_mental_state), 0).reshape(self.physical_state.shape[0] + self.estimated_mental_state.shape[0],)
+        else:
+            raise NotImplementedError("infleunce_type is invalid")
+        # self.state = \
+        # np.concatenate((self.physical_state, self.mental_state), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
         return self.state, reward, done, info
     
     def reset(self):
@@ -343,8 +372,19 @@ class HumanRobotEnv(Env):
         #dy = 0
         self.physical_state = np.array([[0.4 + dx], [0.0]])
         self.mental_state   = np.array([[1.0]])
-        self.state = \
-        np.concatenate((self.physical_state, self.mental_state), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        if self.influence_type == 'baseline':
+            self.state = \
+            np.concatenate((self.physical_state, np.zeros_like(self.mental_state)), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        elif self.influence_type == 'oracle':
+            self.state = \
+            np.concatenate((self.physical_state, self.mental_state), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
+        elif self.influence_type == 'estimated':
+            self.state = \
+            np.concatenate((self.physical_state, self.estimated_mental_state), 0).reshape(self.physical_state.shape[0] + self.estimated_mental_state.shape[0],)
+        else:
+            raise NotImplementedError("infleunce_type is invalid")
+        # self.state = \
+        # np.concatenate((self.physical_state, self.mental_state), 0).reshape(self.physical_state.shape[0] + self.mental_state.shape[0],)
         self.step_count = 1
         self.goal_index = 1
         self.current_demo_state_traj = []
@@ -352,6 +392,7 @@ class HumanRobotEnv(Env):
         self.current_demo_human_obs_traj = []
         self.current_demo_robot_action_traj = []
         self.current_demo_human_mental_state_traj = []
+        self.current_demo_human_estimated_mental_state_traj = []
         self.current_demo_reward_traj = []
         self.current_demo_task_reward_traj = []
         self.current_demo_action_reward_traj = []

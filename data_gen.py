@@ -29,7 +29,7 @@ def gen_mental_state(sim_policy: dict):
 
 def generate_simulated_data(sim_policy: dict, sim_time: int, n_demo: int,
                             is_updating_internal_model: bool, stochastic_human: bool,
-                            human_lr: float):
+                            human_lr: float, influence_type: str):
     # Simulate how human updates the internal model
 
     robot_states = []
@@ -38,7 +38,7 @@ def generate_simulated_data(sim_policy: dict, sim_time: int, n_demo: int,
     human_mental_states = []
 
     for i in tqdm(range(n_demo)):
-        human_env = HumanRobotEnv('passive_teaching', 1.0, 'use_model_human', is_updating_internal_model, human_lr)
+        human_env = HumanRobotEnv('passive_teaching', 1.0, 'use_model_human', is_updating_internal_model, human_lr, influence_type)
         human_env.set_environment(A, B, Q, R, None, None, sim_time)
         human_env.set_action_set(None, u_t0_R_aug_set)
         human_env.set_human_internal_model(None)
